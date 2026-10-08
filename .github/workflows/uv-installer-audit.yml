@@ -1,0 +1,41 @@
+name: Audit uv 0.11.31 installer (isolated)
+
+on:
+  push:
+    branches:
+      - security-review/uv-0.11.31
+
+permissions: {}
+
+jobs:
+  audit-and-smoke-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Download and verify exact official installer
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/uv-audit"
+          curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
+            'https://github.com/astral-sh/uv/releases/download/0.11.31/uv-installer.sh' \
+            --output "$RUNNER_TEMP/uv-audit/installer.sh"
+          printf '%s  %s\n' \
+            'bd9a2739c49251c71fd3706ac00b1bb8582ea138433c6e52840de4aba646e46a' \
+            "$RUNNER_TEMP/uv-audit/installer.sh" | sha256sum --check --strict
+          test "$(wc -c < "$RUNNER_TEMP/uv-audit/installer.sh")" -eq 71233
+          sh -n "$RUNNER_TEMP/uv-audit/installer.sh"
+          echo 'Verified official release SHA-256, byte count, and shell syntax.'
+          echo 'Selected command and destination indicators for manual inspection:'
+          grep -nE 'curl|wget|https?://|sudo|rm -rf|chmod|chown|eval|\.profile|\.bashrc|/etc/' "$RUNNER_TEMP/uv-audit/installer.sh" | head -n 100 || true
+
+      - name: Install and smoke test on disposable Linux runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          UV_UNMANAGED_INSTALL="$RUNNER_TEMP/uv-audit/bin" \
+          UV_NO_MODIFY_PATH=1 \
+            sh "$RUNNER_TEMP/uv-audit/installer.sh"
+          "$RUNNER_TEMP/uv-audit/bin/uv" --version
+          test "$("$RUNNER_TEMP/uv-audit/bin/uv" --version)" = 'uv 0.11.31'
+          echo 'PASS: verified official uv 0.11.31 installer completed and runs on Ubuntu.'

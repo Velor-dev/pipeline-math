@@ -37,5 +37,5 @@ jobs:
           UV_NO_MODIFY_PATH=1 \
             sh "$RUNNER_TEMP/uv-audit/installer.sh"
           "$RUNNER_TEMP/uv-audit/bin/uv" --version
-          test "$("$RUNNER_TEMP/uv-audit/bin/uv" --version)" = 'uv 0.11.31'
+          test "$("$RUNNER_TEMP/uv-audit/bin/uv" --version)" = 'uv 0.11.31 (x86_64-unknown-linux-gnu)'
           echo 'PASS: verified official uv 0.11.31 installer completed and runs on Ubuntu.'
